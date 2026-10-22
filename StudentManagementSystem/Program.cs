@@ -46,7 +46,7 @@ namespace StudentManagementSystem
                         PasalintiStudenta(studentai);
                         break;
                     case "0":
-                        Console.WriteLine("Programa baigiama");
+                        Console.WriteLine("Studentų valdymo programa baigiama.");
                         break;
                     default:
                         Console.WriteLine("Neteisingas pasirinkimas");
