@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace StudentManagementSystem
 {
@@ -25,7 +26,7 @@ namespace StudentManagementSystem
             do
             {
                 Console.WriteLine("1. Peržiūrėti visus studentus\n2. Ieškoti studento\n3. Pridėti naują studentą\n" +
-                "4. Pridėti studentui pažymį\n5. Pašalinti studentą\n0. Išeiti");
+                "4. Pridėti studentui pažymį\n5. Pašalinti studentą\n6. Rūšiuoti studentus pagal vidurkį\n0. Išeiti");
                 pas = Console.ReadLine();
                 switch (pas)
                 {
@@ -47,6 +48,9 @@ namespace StudentManagementSystem
                         break;
                     case "0":
                         Console.WriteLine("Studentų valdymo programa baigiama.");
+                        break;
+                    case "6":
+                        RūšiuotiStudentus(studentai);
                         break;
                     default:
                         Console.WriteLine("Neteisingas pasirinkimas");
@@ -261,6 +265,21 @@ namespace StudentManagementSystem
                 eilutes.Add(eilute);
             }
             File.WriteAllLines(CFd, eilutes);
+        }
+        static void RūšiuotiStudentus(List<Studentas> studentai)
+        {
+            if (studentai.Count == 0)
+            {
+                Console.WriteLine("Studentų sąrašas tuščias.");
+                return;
+            }
+            var surikiuoti = studentai.OrderByDescending(s => s.GautiVidurki()).ToList();
+            foreach (Studentas studentas in surikiuoti)
+            {
+                Console.WriteLine("{0} {1} — vidurkis: {2:F2}",
+                studentas.Vardas, studentas.Pavarde, studentas.GautiVidurki());
+            }
+
         }
 
 
