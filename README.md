@@ -64,7 +64,7 @@ If invalid student data is detected during loading, the application reports an e
 **Instructions:**
 
 1. Clone or download this repository.
-2. Open the `.sln` solution file in Visual Studio.
+2. Open `StudentManagementSystem.slnx` in a compatible version of Visual Studio.
 3. Build the solution.
 4. Run the application.
 5. Use the console menu to manage student records.
