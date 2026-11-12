@@ -1,2 +1,0 @@
-Jonas;Jonaitis;8,9,10
-Petras;Petraitis;7,8

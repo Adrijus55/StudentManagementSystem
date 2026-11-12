@@ -7,28 +7,47 @@ namespace StudentManagementSystem
 {
     internal class Program
     {
-        const string CFd = "..\\..\\Studentai.txt";
+        static readonly string studentuFailoKelias = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Studentai.txt");
 
         static void Main(string[] args)
         {
             List<Studentas> studentai;
 
-            if (File.Exists(CFd))
+            if (File.Exists(studentuFailoKelias))
             {
-                studentai = SkaitytiStudentus();
+                try
+                {
+                    studentai = SkaitytiStudentus();
+                }
+                catch (InvalidDataException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine("Klaida skaitant failą: " + ex.Message);
+                    return;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Console.WriteLine("Klaida skaitant failą: " + ex.Message);
+                    return;
+                }
+
             }
             else
             {
                 studentai = new List<Studentas>();
             }
 
-            string pas = "0";
+            string pasirinkimas = "0";
             do
             {
                 Console.WriteLine("1. Peržiūrėti visus studentus\n2. Ieškoti studento\n3. Pridėti naują studentą\n" +
                 "4. Pridėti studentui pažymį\n5. Pašalinti studentą\n6. Rūšiuoti studentus pagal vidurkį\n0. Išeiti");
-                pas = Console.ReadLine();
-                switch (pas)
+                pasirinkimas = Console.ReadLine();
+                switch (pasirinkimas)
                 {
                     case "1":
 
@@ -50,15 +69,24 @@ namespace StudentManagementSystem
                         Console.WriteLine("Studentų valdymo programa baigiama.");
                         break;
                     case "6":
-                        RūšiuotiStudentus(studentai);
+                        RusiuotiStudentus(studentai);
                         break;
                     default:
                         Console.WriteLine("Neteisingas pasirinkimas");
                         break;
                 }
-            } while (pas != "0");
+            } while (pasirinkimas != "0");
 
-            IssaugotiStudentus(studentai);
+            try { IssaugotiStudentus(studentai); }
+
+            catch (IOException ex)
+            {
+                Console.WriteLine("Klaida įrašant failą: " + ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine("Klaida įrašant failą: " + ex.Message);
+            }
 
         }
 
@@ -79,14 +107,14 @@ namespace StudentManagementSystem
         {
             List<Studentas> studentai = new List<Studentas>();
 
-            string[] eilutes = File.ReadAllLines(CFd);
+            string[] eilutes = File.ReadAllLines(studentuFailoKelias);
 
             foreach (string eilute in eilutes)
             {
                 string[] dalys = eilute.Split(';');
                 if (dalys.Length != 3)
                 {
-                    continue;
+                    throw new InvalidDataException("Netinkamas duomenų formatas: " + eilute);
                 }
 
                 string var = dalys[0];
@@ -94,21 +122,25 @@ namespace StudentManagementSystem
                 if (string.IsNullOrWhiteSpace(var) ||
                 string.IsNullOrWhiteSpace(pav))
                 {
-                    continue;
+                    throw new InvalidDataException("Vardas ir pavardė negali būti tušti: " + eilute);
                 }
 
-                Studentas S1 = new Studentas(var, pav);
+                Studentas studentas = new Studentas(var, pav);
                 string[] pazymiai = dalys[2].Split(',');
-                foreach (string pazymys in pazymiai)
+                if (!string.IsNullOrWhiteSpace(dalys[2]))
                 {
-                    int paz;
-                    bool pavyko = int.TryParse(pazymys, out paz);
-                    if (pavyko && paz >= 1 && paz <= 10)
+                    foreach (string pazymys in pazymiai)
                     {
-                        S1.PridetiPaz(paz);
+                        int paz;
+                        bool pavyko = int.TryParse(pazymys, out paz);
+                        if (pavyko && paz >= 1 && paz <= 10)
+                        {
+                            studentas.PridetiPaz(paz);
+                        }
+                        else throw new InvalidDataException("Duomenų formatas netinkamas: " + eilute);
                     }
                 }
-                studentai.Add(S1);
+                studentai.Add(studentas);
             }
 
 
@@ -128,12 +160,12 @@ namespace StudentManagementSystem
             }
             else
             {
-                int skait = 1;
+                int numeris = 1;
                 foreach (Studentas studentas in rasti)
                 {
                     Console.WriteLine("Rasti studentai: {0} {1} {2}",
-                        skait, studentas.Vardas, studentas.Pavarde);
-                    skait++;
+                        numeris, studentas.Vardas, studentas.Pavarde);
+                    numeris++;
                 }
                 while (true)
                 {
@@ -154,9 +186,9 @@ namespace StudentManagementSystem
         static void IeskotiStudento(List<Studentas> studentai)
         {
             Console.WriteLine("Įveskite studento vardą, kurio ieškote: ");
-            string ieskomasvard = Console.ReadLine();
+            string ieskomasvard = Console.ReadLine().Trim();
             Console.WriteLine("Įveskite studento pavardę, kurio ieškote: ");
-            string ieskomaspav = Console.ReadLine();
+            string ieskomaspav = Console.ReadLine().Trim();
             List<Studentas> rastas = RastiStudenta(studentai, ieskomasvard, ieskomaspav);
             if (rastas.Count > 0)
             {
@@ -170,12 +202,12 @@ namespace StudentManagementSystem
         static void PridetiStudenta(List<Studentas> studentai)
         {
             Console.WriteLine("Įveskite vardą: ");
-            string vardas = Console.ReadLine();
+            string vardas = Console.ReadLine().Trim();
             Console.WriteLine("Įveskite pavardę: ");
-            string pavarde = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(vardas) || string.IsNullOrWhiteSpace(pavarde))
+            string pavarde = Console.ReadLine().Trim();
+            if (string.IsNullOrWhiteSpace(vardas) || string.IsNullOrWhiteSpace(pavarde) || vardas.Contains(";") || pavarde.Contains(";"))
             {
-                Console.WriteLine("Vardas ir pavardė negali būti tušti!");
+                Console.WriteLine("Vardas ir pavardė negali būti tušti arba turėti kabliataškių!");
             }
             else
             {
@@ -195,9 +227,9 @@ namespace StudentManagementSystem
         static void PridetiPazymi(List<Studentas> studentai)
         {
             Console.WriteLine("Įveskite vardą: ");
-            string vardas = Console.ReadLine();
+            string vardas = Console.ReadLine().Trim();
             Console.WriteLine("Įveskite pavardę: ");
-            string pavarde = Console.ReadLine();
+            string pavarde = Console.ReadLine().Trim();
             List<Studentas> rastas = RastiStudenta(studentai, vardas, pavarde);
 
             int paz;
@@ -208,7 +240,7 @@ namespace StudentManagementSystem
                 while (true)
                 {
                     Console.WriteLine("Įveskite pažymį: ");
-                    bool pavyko = int.TryParse(Console.ReadLine(), out paz);
+                    bool pavyko = int.TryParse(Console.ReadLine().Trim(), out paz);
                     if (pavyko)
                     {
                         if (paz >= 1 && paz <= 10)
@@ -233,9 +265,9 @@ namespace StudentManagementSystem
         static void PasalintiStudenta(List<Studentas> studentai)
         {
             Console.WriteLine("Įveskite studento vardą: ");
-            string vardas = Console.ReadLine();
+            string vardas = Console.ReadLine().Trim();
             Console.WriteLine("Įveskite studento pavardę: ");
-            string pavarde = Console.ReadLine();
+            string pavarde = Console.ReadLine().Trim();
             List<Studentas> rasti = RastiStudenta(studentai, vardas, pavarde);
             Studentas pasirinktasStudentas = PasirinktiStudenta(rasti);
 
@@ -264,9 +296,15 @@ namespace StudentManagementSystem
                 string eilute = studentas.Vardas + ";" + studentas.Pavarde + ";" + string.Join(",", studentas.Pazymiai);
                 eilutes.Add(eilute);
             }
-            File.WriteAllLines(CFd, eilutes);
+            string laikinasFailas = studentuFailoKelias + ".tmp";
+            File.WriteAllLines(laikinasFailas, eilutes);
+            if (File.Exists(studentuFailoKelias))
+            {
+                File.Replace(laikinasFailas, studentuFailoKelias, studentuFailoKelias + ".bak");
+            }
+            else File.Move(laikinasFailas, studentuFailoKelias);
         }
-        static void RūšiuotiStudentus(List<Studentas> studentai)
+        static void RusiuotiStudentus(List<Studentas> studentai)
         {
             if (studentai.Count == 0)
             {
